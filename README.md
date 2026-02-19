@@ -249,6 +249,72 @@ users = [%{name: "John", email: "john@example.com"}]
 {:ok, validated_users} = UserListSchema.validate(users)
 ```
 
+### Environment-Based Settings
+
+Load schema data from environment variables with test-friendly injection:
+
+```elixir
+defmodule AppSettings do
+  use Exdantic
+
+  schema do
+    field :port, :integer, default: 4000
+    field :debug, :boolean, default: false
+    field :database, {:map, {:string, :string}}, required: true
+    field :db_url, :string, required: true, extra: %{"env" => "DATABASE_URL"}
+  end
+end
+
+# In tests: inject env map directly (no OS env mutation)
+{:ok, config} =
+  Exdantic.Settings.load(AppSettings,
+    env: %{
+      "APP_PORT" => "8080",
+      "APP_DATABASE" => ~s({"host":"localhost","name":"app_db"}),
+      "DATABASE_URL" => "ecto://postgres:postgres@localhost/app"
+    },
+    env_prefix: "APP_"
+  )
+
+# In production: read from System.get_env/0
+{:ok, config} =
+  Exdantic.Settings.from_system_env(AppSettings,
+    env_prefix: "APP_",
+    env_nested_delimiter: "__"
+  )
+```
+
+`Exdantic.Settings` API:
+
+- `Exdantic.Settings.load(schema_module, opts \\ [])`
+- `Exdantic.Settings.load!(schema_module, opts \\ [])`
+- `Exdantic.Settings.from_system_env(schema_module, opts \\ [])`
+
+Supported options:
+
+- `input: map()` explicit values (highest precedence)
+- `env: map()` injectable env map (defaults to `System.get_env/0`)
+- `env_prefix: String.t()` default `""`
+- `env_nested_delimiter: String.t()` default `"__"`
+- `case_sensitive: boolean()` default `false`
+- `ignore_empty: boolean()` default `false`
+- `allow_atoms: false | :existing` default `false`
+- `bool_numeric: boolean()` default `true`
+
+Behavior notes:
+
+- Env key derivation uses `snake_case -> UPPER_SNAKE` and joins nested segments with the delimiter.
+- Field override `extra: %{"env" => "KEY"}` is absolute (prefix is not applied); override key is checked first.
+- Merge precedence is `input > env > defaults`.
+- Structured values are JSON-only (`array`, map/object, nested schema refs).
+- Exploded nested env values override top-level JSON for the same nested field.
+- Exploded addressing into arrays is not supported in v1 (`APP_ITEMS__0` is ignored).
+- Union decoding is conservative:
+  - If value starts with `{` or `[` and union contains a structured member, JSON decode is attempted.
+  - Otherwise raw string is passed to validator (no union-level scalar probing).
+
+For full documentation, see `docJune/SETTINGS_ENV_GUIDE.md`.
+
 ## 🏗️ Core Concepts
 
 ### Schema Definition Approaches
