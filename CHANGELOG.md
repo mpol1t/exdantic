@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Added `Exdantic.Settings` env-based settings loader with:
+  - `load/2`, `load!/2`, and `from_system_env/2`
+  - field-driven env lookup with `env_prefix` and `env_nested_delimiter`
+  - field-level absolute env override via `extra: %{"env" => "KEY"}`
+  - test-friendly `env: %{}` injection (no process env mutation required)
+  - loader-level errors: `:env_cast`, `:env_json`, `:env_key_conflict`
+
+### Changed
+- Settings decoding and merge behavior now documented and validated by property tests:
+  - precedence: `input > env > defaults`
+  - structured types are JSON-only
+  - exploded nested values deep-merge over top-level JSON values
+  - conservative union env decoding (no union-level scalar coercion probing)
+  - no exploded addressing into arrays in v1
+
 ## [0.0.2] - 2025-01-05
 
 ### Changed
