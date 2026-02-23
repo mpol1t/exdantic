@@ -17,6 +17,10 @@ Exdantic provides a comprehensive type system with rich validation capabilities,
 - 🔧 **Value Transformation** - Transform values during validation (normalization, formatting)
 - 🚨 **Structured Errors** - Detailed error information with field paths and codes
 
+## Documentation Index
+
+- `SETTINGS_ENV_GUIDE.md` - Complete guide for `Exdantic.Settings` (env-based app configuration)
+
 ## 🚀 Quick Start
 
 ### Installation
